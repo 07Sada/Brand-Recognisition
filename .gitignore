@@ -91,3 +91,6 @@ target/
 
 # virtual environment
 brand
+
+# testing notebook
+notebooks/test.ipynb 

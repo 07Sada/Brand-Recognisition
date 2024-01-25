@@ -1,30 +1,44 @@
 # -*- coding: utf-8 -*-
-import click
-import logging
 from pathlib import Path
 from dotenv import find_dotenv, load_dotenv
+import zipfile
+import shutil 
+import os
 
+def extract_zip(zip_file, target_dir):
 
-@click.command()
-@click.argument('input_filepath', type=click.Path(exists=True))
-@click.argument('output_filepath', type=click.Path())
-def main(input_filepath, output_filepath):
-    """ Runs data processing scripts to turn raw data from (../raw) into
-        cleaned data ready to be analyzed (saved in ../processed).
-    """
-    logger = logging.getLogger(__name__)
-    logger.info('making final data set from raw data')
+  with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+    # Create the target directory if it doesn't exist
+    os.makedirs(target_dir, exist_ok=True)
 
+    # Extract all files to the target directory
+    zip_ref.extractall(target_dir)
 
 if __name__ == '__main__':
-    log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    logging.basicConfig(level=logging.INFO, format=log_fmt)
+    curr_dir = Path.cwd()
 
-    # not used in this stub but often useful for finding various files
-    project_dir = Path(__file__).resolve().parents[2]
+    raw_dir = curr_dir.as_posix() + '/data/raw'
+    proceesed_dir = curr_dir.as_posix() + '/data/processed'
 
-    # find .env automagically by walking up directories until it's found, then
-    # load up the .env entries as environment variables
-    load_dotenv(find_dotenv())
+    raw_dataset = "brand_recognition.zip"
+    raw_file_loc = Path(raw_dir, raw_dataset)
 
-    main()
+    extract_zip(zip_file=raw_file_loc, target_dir=proceesed_dir)
+
+    parent_dir = Path(proceesed_dir)
+    dataset_dir = Path(parent_dir, 'dataset')
+
+    train_val_path_list = [d for d in dataset_dir.glob('*') if d.is_dir()]
+    
+    try:
+        for sub_dir in train_val_path_list:
+            shutil.move(sub_dir, parent_dir)
+    except Exception as e:
+       print(e)
+
+    try:
+        if not any(dataset_dir.iterdir()):
+            shutil.rmtree(dataset_dir) 
+    except Exception as e:
+       print(e)
+    
